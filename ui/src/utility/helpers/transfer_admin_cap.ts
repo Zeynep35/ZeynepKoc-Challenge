@@ -11,5 +11,10 @@ export const transferAdminCap = (adminCapId: string, to: string) => {
     // This is a simple object transfer, not a moveCall
     // The recipient becomes the new admin
   
+  tx.transferObjects(
+  [tx.object(adminCapId)],
+  tx.pure.address(to)
+  );
+  
   return tx;
 };

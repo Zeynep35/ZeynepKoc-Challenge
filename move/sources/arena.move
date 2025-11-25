@@ -2,6 +2,10 @@ module challenge::arena;
 
 use challenge::hero::Hero;
 use sui::event;
+use sui::object::{Self as object, UID, ID};
+use sui::tx_context::{Self, TxContext};
+use sui::transfer;
+
 
 // ========= STRUCTS =========
 
@@ -35,6 +39,19 @@ public fun create_arena(hero: Hero, ctx: &mut TxContext) {
         // Set owner to ctx.sender()
     // TODO: Emit ArenaCreated event with arena ID and timestamp (Don't forget to use ctx.epoch_timestamp_ms(), object::id(&arena))
     // TODO: Use transfer::share_object() to make it publicly tradeable
+    
+    let arena = Arena {
+        id: object::new(ctx),
+        warrior: hero,
+        owner: ctx.sender()
+    };
+
+    event::emit(ArenaCreated{
+            arena_id: object::id(&arena),
+            timestamp: ctx.epoch_timestamp_ms()
+        });
+
+    transfer::share_object(arena);
 }
 
 #[allow(lint(self_transfer))]
@@ -50,6 +67,35 @@ public fun battle(hero: Hero, arena: Arena, ctx: &mut TxContext) {
     // TODO:  Emit ArenaCompleted event with winner/loser IDs (Don't forget to use object::id(&warrior) or object::id(&hero) ). 
         // Hints:  
         // You have to emit this inside of the if else statements
-    // TODO: Delete the battle place ID 
+    // TODO: Delete the battle place ID
+
+    let Arena { id, warrior, owner } = arena;
+    let hero_id = object::id(&hero);
+    let warrior_id = object::id(&warrior);
+
+    let hero_power = challenge::hero::hero_power(&hero);
+    let warrior_power = challenge::hero::hero_power(&warrior);
+
+    if (hero_power > warrior_power) {
+        transfer::public_transfer(hero, ctx.sender());
+        transfer::public_transfer(warrior, ctx.sender());
+
+        event::emit(ArenaCompleted {
+            winner_hero_id: hero_id,
+            loser_hero_id: warrior_id,
+            timestamp: ctx.epoch_timestamp_ms(),
+        });
+    } else {
+        transfer::public_transfer(hero, owner);
+        transfer::public_transfer(warrior, owner);
+
+        event::emit(ArenaCompleted {
+            winner_hero_id: warrior_id,
+            loser_hero_id: hero_id,
+            timestamp: ctx.epoch_timestamp_ms(),
+        });
+    };
+
+    object::delete(id);
 }
 

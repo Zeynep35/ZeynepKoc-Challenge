@@ -1,6 +1,9 @@
 module challenge::hero;
 
 use std::string::String;
+use sui::object::{Self as object, UID};
+use sui::tx_context::{Self, TxContext};
+use sui::transfer;
 
 // ========= STRUCTS =========
 public struct Hero has key, store {
@@ -29,6 +32,23 @@ public fun create_hero(name: String, image_url: String, power: u64, ctx: &mut Tx
         // Hints:
         // Use ctx.epoch_timestamp_ms() for timestamp
     //TODO: Use transfer::freeze_object() to make metadata immutable
+    let hero = Hero{ 
+            id:object::new(ctx),
+            name,
+            image_url,
+            power
+        };
+    
+        // TODO: Transfer the Hero object to the sender
+        transfer::public_transfer(hero, ctx.sender()); 
+
+        let hero_metadata = HeroMetadata {
+            id: object::new(ctx), // TODO: Create the HeroMetadata object,
+            timestamp: ctx.epoch_timestamp_ms() // TODO: Get the epoch timestamp ,
+        };
+
+        // TODO: Freeze the HeroMetadata object
+        transfer::freeze_object(hero_metadata);
 }
 
 // ========= GETTER FUNCTIONS =========
